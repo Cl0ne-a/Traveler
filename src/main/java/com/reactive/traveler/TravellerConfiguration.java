@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
 import org.springframework.data.redis.core.ReactiveRedisOperations;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
@@ -21,7 +22,11 @@ public class TravellerConfiguration {
                         .newSerializationContext(new StringRedisSerializer());
 
         RedisSerializationContext<String, Traveller> context =
-                builder.value(serializer).build();
+                builder.key(new StringRedisSerializer())
+                        .value(serializer)
+                        .hashKey(new StringRedisSerializer())
+                        .hashValue(new GenericJackson2JsonRedisSerializer())
+                        .build();
 
         return new ReactiveRedisTemplate<>(factory, context);
     }

@@ -8,24 +8,44 @@ import reactor.core.publisher.Flux;
 import javax.annotation.PostConstruct;
 import java.util.UUID;
 
+import static com.reactive.traveler.Gender.MALE;
+
 @Component
 public class DataLoader {
-    private final ReactiveRedisConnectionFactory reactiveRedisConnectionFactory;
-    private final ReactiveRedisOperations<String, Traveller> reactiveRedisOperations;
+    private final ReactiveRedisConnectionFactory factory;
+    private final ReactiveRedisOperations<String, Traveller> travellerOps;
 
-    public DataLoader(ReactiveRedisConnectionFactory reactiveRedisConnectionFactory, ReactiveRedisOperations<String, Traveller> reactiveRedisOperations) {
-        this.reactiveRedisConnectionFactory = reactiveRedisConnectionFactory;
-        this.reactiveRedisOperations = reactiveRedisOperations;
+    public DataLoader(ReactiveRedisConnectionFactory factory, ReactiveRedisOperations<String, Traveller> travellerOps) {
+        this.factory = factory;
+        this.travellerOps = travellerOps;
     }
 
     @PostConstruct
     public void loadData() {
-        reactiveRedisConnectionFactory.getReactiveConnection().serverCommands().flushAll().thenMany(
-                        Flux.just("Jet Black Redis", "Darth Redis", "Black Alert Redis")
-                                .map(name -> new Traveller(UUID.randomUUID().toString(), name))
-                                .flatMap(coffee -> reactiveRedisOperations.opsForValue().set(coffee.getId(), coffee)))
-                .thenMany(reactiveRedisOperations.keys("*")
-                        .flatMap(reactiveRedisOperations.opsForValue()::get))
-                .subscribe(System.out::println);
+        Traveller traveller1 = Traveller.builder()
+                .id(UUID.randomUUID().toString())
+                .name("Jet Black Redis")
+                .gender(MALE)
+                .build();
+
+        Traveller traveller2 = Traveller.builder()
+                .id(UUID.randomUUID().toString())
+                .name("Black Alert Redis")
+                .gender(Gender.FEMALE)
+                .build();
+
+        Traveller traveller3 = Traveller.builder()
+                .id(UUID.randomUUID().toString())
+                .name("My dear Self Redis")
+                .gender(Gender.FEMALE)
+                .build();
+        var travellers = Flux.just(traveller1, traveller2, traveller3);
+
+        var redisDbSet = travellers.flatMap(traveller -> travellerOps.opsForValue().set(traveller.getId(), traveller));
+
+        factory.getReactiveConnection().serverCommands().flushAll().thenMany(
+                redisDbSet.thenMany(travellerOps.keys("*"))
+                        .flatMap(travellerOps.opsForValue()::get))
+                        .subscribe(System.out::println);
     }
 }

@@ -31,7 +31,7 @@ public class TravellerController {
     }
 
     @DeleteMapping("/travellers/{id}")
-    public Mono<Boolean> deleteById(@PathVariable String id) {
+    public Mono<Long> deleteById(@PathVariable String id) {
         return this.travellerRepository.deleteById(id);
     }
 }

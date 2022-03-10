@@ -24,7 +24,7 @@ public class TravellerRepository {
         return this.reactiveRedisOperations.convertAndSend("travellers", traveller);
     }
 
-    public Mono<Boolean> deleteById(String id) {
-        return this.reactiveRedisOperations.opsForList().delete(id);
+    public Mono<Long> deleteById(String id) {
+        return this.reactiveRedisOperations.delete(id);
     }
 }
